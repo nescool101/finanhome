@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://finanhome.vercel.app/sitemap.xml
