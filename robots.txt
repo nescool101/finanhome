@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://finanhome.vercel.app/sitemap.xml
+Sitemap: https://inmobiliariafinanhome.vercel.app/sitemap.xml
