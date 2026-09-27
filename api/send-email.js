@@ -1,5 +1,10 @@
 const nodemailer = require('nodemailer');
 
+// Escape user-supplied text before interpolating it into email HTML.
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
+
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -9,10 +14,16 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, email, phone, service, message } = req.body;
+  const { name, email, phone, service, message } = req.body || {};
 
   if (!name || !email || !phone || !service || !message) {
     return res.status(400).json({ error: 'Todos los campos son requeridos' });
+  }
+  if ([name, email, phone, service].some(v => String(v).length > 200) || String(message).length > 5000) {
+    return res.status(400).json({ error: 'Uno o más campos exceden la longitud permitida' });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
+    return res.status(400).json({ error: 'Email inválido' });
   }
 
   try {
@@ -39,23 +50,23 @@ module.exports = async (req, res) => {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 10px 0; font-weight: 600; color: #1a365d; width: 140px; vertical-align: top;">Nombre:</td>
-              <td style="padding: 10px 0; color: #334155;">${name}</td>
+              <td style="padding: 10px 0; color: #334155;">${esc(name)}</td>
             </tr>
             <tr>
               <td style="padding: 10px 0; font-weight: 600; color: #1a365d; vertical-align: top;">Email:</td>
-              <td style="padding: 10px 0; color: #334155;"><a href="mailto:${email}" style="color: #2a4a7f;">${email}</a></td>
+              <td style="padding: 10px 0; color: #334155;"><a href="mailto:${esc(email)}" style="color: #2a4a7f;">${esc(email)}</a></td>
             </tr>
             <tr>
               <td style="padding: 10px 0; font-weight: 600; color: #1a365d; vertical-align: top;">Telefono:</td>
-              <td style="padding: 10px 0; color: #334155;"><a href="tel:${phone}" style="color: #2a4a7f;">${phone}</a></td>
+              <td style="padding: 10px 0; color: #334155;"><a href="tel:${esc(phone)}" style="color: #2a4a7f;">${esc(phone)}</a></td>
             </tr>
             <tr>
               <td style="padding: 10px 0; font-weight: 600; color: #1a365d; vertical-align: top;">Servicio:</td>
-              <td style="padding: 10px 0; color: #334155;">${service}</td>
+              <td style="padding: 10px 0; color: #334155;">${esc(service)}</td>
             </tr>
             <tr>
               <td style="padding: 10px 0; font-weight: 600; color: #1a365d; vertical-align: top;">Mensaje:</td>
-              <td style="padding: 10px 0; color: #334155; line-height: 1.6;">${message.replace(/\n/g, '<br>')}</td>
+              <td style="padding: 10px 0; color: #334155; line-height: 1.6;">${esc(message).replace(/\n/g, '<br>')}</td>
             </tr>
           </table>
         </div>
@@ -73,13 +84,13 @@ module.exports = async (req, res) => {
       to: process.env.CONTACT_EMAIL,
       cc: process.env.CC_EMAIL,
       replyTo: email,
-      subject: `Finanhome - ${service} - ${name}`,
+      subject: `Finanhome - ${service} - ${name}`.replace(/[\r\n]/g, ' '),
       html: htmlEmail
     });
 
     return res.status(200).json({ success: true, message: 'Mensaje enviado correctamente' });
   } catch (error) {
     console.error('Error sending email:', error);
-    return res.status(500).json({ error: 'Error interno del servidor', details: error.message });
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
