@@ -30,8 +30,8 @@ module.exports = async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
+        user: process.env.GMAIL_USER_NESCAO,
+        pass: process.env.GMAIL_APP_PASSWORD_NESCAO
       }
     });
 
@@ -80,7 +80,7 @@ module.exports = async (req, res) => {
     `;
 
     await transporter.sendMail({
-      from: `"Finanhome Web" <${process.env.GMAIL_USER}>`,
+      from: `"Finanhome Web" <${process.env.GMAIL_USER_NESCAO}>`,
       to: process.env.CONTACT_EMAIL,
       cc: process.env.CC_EMAIL,
       replyTo: email,
